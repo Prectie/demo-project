@@ -1,20 +1,49 @@
 pipeline {
   agent any
 
+  environment {
+    CI = 'true'
+  }
+
   stages {
-    stage('Webhook Trigger Check') {
+    stage('Environment Check') {
       steps {
         sh '''
-          echo "GitHub webhook triggered Jenkins successfully"
           echo "Current user:"
           whoami
           echo "Git version:"
           git --version
+          echo "Node version:"
+          node --version
+          echo "npm version:"
+          npm --version
           echo "Docker version:"
           docker --version
-          echo "Running Docker containers visible to Jenkins:"
-          docker ps
         '''
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('Lint') {
+      steps {
+        sh 'npm run lint'
+      }
+    }
+
+    stage('Build') {
+      steps {
+        sh 'npm run build'
+      }
+    }
+
+    stage('Archive Build Artifact') {
+      steps {
+        archiveArtifacts artifacts: 'dist/**', fingerprint: true
       }
     }
   }
